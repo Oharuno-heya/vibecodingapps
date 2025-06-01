@@ -47,6 +47,8 @@ class PomodoroTimer {
     reset() {
         this.stop();
         this.isWorking = true;
+        this.workTime = this.$workTime.value * 60;
+        this.breakTime = this.$breakTime.value * 60;
         this.$timer.textContent = this.formatTime(this.workTime);
         this.$startBtn.disabled = false;
         this.$stopBtn.disabled = true;
