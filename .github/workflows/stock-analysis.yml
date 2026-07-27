@@ -1,0 +1,61 @@
+name: 日本株自動分析(朝・昼・夕)
+
+on:
+  schedule:
+    # JST = UTC+9。平日のみ実行(cronはUTC基準のため曜日をずらしている)
+    - cron: "15 23 * * 0-4"   # 朝 8:15 JST(月〜金)寄り付き前分析
+    - cron: "15 3 * * 1-5"    # 昼 12:15 JST(月〜金)前場終了後分析
+    - cron: "30 7 * * 1-5"    # 夕 16:30 JST(月〜金)大引け後分析
+  workflow_dispatch:
+    inputs:
+      session:
+        description: "セッション(省略時は時刻から自動判定)"
+        required: false
+        type: choice
+        options: ["", "morning", "noon", "evening"]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: stock-analysis
+  cancel-in-progress: false
+
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: japan-stock-analyzer/requirements.txt
+
+      - name: 依存関係インストール
+        working-directory: japan-stock-analyzer
+        run: pip install -r requirements.txt
+
+      - name: 分析実行
+        working-directory: japan-stock-analyzer
+        run: |
+          if [ -n "${{ github.event.inputs.session }}" ]; then
+            python run_analysis.py --session "${{ github.event.inputs.session }}"
+          else
+            python run_analysis.py
+          fi
+
+      - name: レポートとウォッチリストDBをコミット
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add japan-stock-analyzer/reports japan-stock-analyzer/data/watchlist.db
+          if git diff --cached --quiet; then
+            echo "変更なし"
+            exit 0
+          fi
+          git commit -m "chore: 自動分析レポート $(TZ=Asia/Tokyo date '+%Y-%m-%d %H:%M JST')"
+          git pull --rebase origin ${{ github.ref_name }} || true
+          git push origin HEAD:${{ github.ref_name }}

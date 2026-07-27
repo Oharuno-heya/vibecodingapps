@@ -1,0 +1,31 @@
+# 日本株自動分析ツール 設定ファイル
+# 投資方針: ミドルリスク・ミドルリターン / スイングトレード(1週間〜1ヶ月)+ 長期投資
+
+screening:
+  min_bars: 120              # 分析に必要な最低日足本数
+  min_turnover_yen: 100000000  # 20日平均売買代金の下限(1億円/日) 流動性フィルタ
+  price_min: 200             # 株価下限(低位株除外)
+  price_max: 30000           # 株価上限
+  atr_pct_min: 1.0           # ATR% 下限(値動きが小さすぎる銘柄を除外)
+  atr_pct_max: 4.5           # ATR% 上限(ボラが高すぎる=ハイリスク銘柄を除外)
+  min_score: 60              # ウォッチリスト追加の最低スコア(100点満点)
+  top_n: 10                  # 1回のスクリーニングで採用する最大銘柄数
+
+risk:
+  stop_loss_atr: 1.5         # 損切り幅 = ATR × この係数
+  profit_target_atr: 2.5     # 利確幅 = ATR × この係数(スイング)
+  max_stop_loss_pct: 8.0     # 損切り幅の上限(エントリー価格比 %)
+  min_risk_reward: 1.5       # リスクリワード比の下限(これ未満は買い見送り)
+  swing_alt_target_pct: 12.0 # スイングの代替利確目安(%)
+  long_term_exit_ma: 75      # 長期保有の撤退ライン(この日数のSMAを終値で割ったら売り)
+
+watchlist:
+  max_size: 20               # ウォッチリスト最大銘柄数
+  remove_score: 45           # このスコアを下回る状態が続いたら削除候補
+  low_score_streak: 3        # 低スコアが何回連続したら削除するか
+  max_watch_days: 60         # シグナルが出ないまま観察を続ける最大日数
+
+trading:
+  # 自動売買は楽天証券/SBI証券に個人向け公式APIがないため「発注案の生成」まで対応
+  budget_per_position: 300000  # 1銘柄あたりの投資予算(円)
+  lot_size: 100                # 単元株数
