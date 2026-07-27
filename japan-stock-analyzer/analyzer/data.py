@@ -172,8 +172,13 @@ def fetch_fundamentals(code: str) -> dict:
         dy = info.get("dividendYield")
         if dy is not None and dy < 1:  # 比率で返る場合は%へ
             dy = dy * 100
+        if dy is not None and dy > 15:  # 異常値(特別配当やデータ不良)は欠損扱い
+            dy = None
+        per = info.get("trailingPE")
+        if per is not None and (per <= 0 or per > 500):
+            per = None
         return {
-            "per": info.get("trailingPE"),
+            "per": per,
             "pbr": info.get("priceToBook"),
             "dividend_yield": dy,
         }
