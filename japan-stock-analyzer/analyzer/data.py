@@ -1,6 +1,13 @@
-"""株価データの取得。yfinance を使用し、JSA_MOCK=1 のときは合成データを生成する。"""
+"""株価データの取得。
+
+主データソース: Yahoo Finance (yfinance) — 無料・APIキー不要
+フォールバック: Stooq (https://stooq.com) — 無料CSV API・日本株対応
+JSA_MOCK=1 のときは合成データを生成する(オフライン開発用)。
+"""
 import hashlib
+import io
 import time
+import urllib.request
 
 import numpy as np
 import pandas as pd
@@ -40,13 +47,50 @@ def _mock_history(ticker: str, days: int = 300) -> pd.DataFrame:
     )
 
 
-def fetch_history(ticker: str, period: str = "2y") -> pd.DataFrame | None:
-    """1銘柄の日足を取得。失敗時は None。"""
-    if is_mock():
-        return _mock_history(ticker)
+# Yahooティッカー -> Stooqシンボルの対応
+_STOOQ_MAP = {
+    "^N225": "^nkx",
+    "^GSPC": "^spx",
+    "^IXIC": "^ndq",
+    "JPY=X": "usdjpy",
+    "^VIX": "^vix",
+    "^SOX": "^sox",
+}
+
+
+def _to_stooq_symbol(ticker: str) -> str | None:
+    if ticker in _STOOQ_MAP:
+        return _STOOQ_MAP[ticker]
+    if ticker.endswith(".T"):
+        return ticker[:-2].lower() + ".jp"
+    return None
+
+
+def _fetch_stooq(ticker: str, max_bars: int = 500) -> pd.DataFrame | None:
+    """StooqのCSVエンドポイントから日足を取得(APIキー不要)。"""
+    sym = _to_stooq_symbol(ticker)
+    if sym is None:
+        return None
+    url = f"https://stooq.com/q/d/l/?s={sym}&i=d"
+    try:
+        req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+        with urllib.request.urlopen(req, timeout=20) as resp:
+            text = resp.read().decode("utf-8", errors="replace")
+        if not text.startswith("Date"):
+            return None  # "No data" などのエラー応答
+        df = pd.read_csv(io.StringIO(text), parse_dates=["Date"], index_col="Date")
+        if "Volume" not in df.columns:  # 為替・一部指数には出来高がない
+            df["Volume"] = 0.0
+        df = df[_REQUIRED].dropna(subset=["Close"])
+        return df.tail(max_bars) if len(df) > 0 else None
+    except Exception:
+        return None
+
+
+def _fetch_yfinance(ticker: str, period: str, retries: int = 2) -> pd.DataFrame | None:
     import yfinance as yf
 
-    for attempt in range(3):
+    for attempt in range(retries):
         try:
             df = yf.Ticker(ticker).history(period=period, auto_adjust=True)
             if df is not None and len(df) > 0:
@@ -56,6 +100,16 @@ def fetch_history(ticker: str, period: str = "2y") -> pd.DataFrame | None:
         except Exception:
             time.sleep(2 * (attempt + 1))
     return None
+
+
+def fetch_history(ticker: str, period: str = "2y") -> pd.DataFrame | None:
+    """1銘柄の日足を取得。Yahoo→Stooqの順に試し、失敗時は None。"""
+    if is_mock():
+        return _mock_history(ticker)
+    df = _fetch_yfinance(ticker, period)
+    if df is not None:
+        return df
+    return _fetch_stooq(ticker)
 
 
 def fetch_universe_history(codes: list[str], period: str = "1y") -> dict[str, pd.DataFrame]:
