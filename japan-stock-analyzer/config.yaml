@@ -13,6 +13,7 @@ screening:
   sector_top_n: 3            # セクター(グループ)内で売買代金上位何銘柄に厳選するか
   min_market_cap_yen: 500000000000  # 時価総額の下限(5000億円)大型株に厳選
   min_equity_ratio_pct: 40.0        # 自己資本比率の下限(%)財務健全性フィルタ
+  equity_ratio_exempt_groups: ["金融"]  # 銀行等は業態上自己資本比率が低いため適用除外
 
 sector:
   bonus_top: 10       # セクター総合評価 上位3グループの銘柄への加点

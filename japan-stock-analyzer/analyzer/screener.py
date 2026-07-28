@@ -46,6 +46,7 @@ def run_screening(cfg: dict, market: dict) -> tuple[list[dict], dict]:
 
     min_mcap = cfg["screening"]["min_market_cap_yen"]
     min_eq = cfg["screening"]["min_equity_ratio_pct"]
+    eq_exempt = set(cfg["screening"].get("equity_ratio_exempt_groups", []))
     bonus_map = sector_info["bonus_by_group"]
 
     results = []
@@ -54,11 +55,12 @@ def run_screening(cfg: dict, market: dict) -> tuple[list[dict], dict]:
         group = group_of(meta[code]["sector"])
         f = fund_map.get(code, {})
         mcap, eq = f.get("market_cap"), f.get("equity_ratio")
-        # 取得済みの値が基準未満なら False。未取得(None)は判定保留
+        # 取得済みの値が基準未満なら False。未取得(None)は判定保留。
+        # 自己資本比率は適用除外グループ(金融など)ではチェックしない
+        eq_bad = (eq is not None and eq < min_eq and group not in eq_exempt)
         fund_ok = None
         if mcap is not None or eq is not None:
-            fund_ok = not ((mcap is not None and mcap < min_mcap)
-                           or (eq is not None and eq < min_eq))
+            fund_ok = not ((mcap is not None and mcap < min_mcap) or eq_bad)
         bonus = bonus_map.get(group, 0)
         signal = detect_buy_signal(e)
         plan = build_trade_plan(e, cfg, signal)

@@ -92,7 +92,7 @@ def _sector_section(sector_info: dict) -> list[str]:
 
 def _candidates_section(candidates: list[dict], added: list[dict]) -> list[str]:
     lines = ["## 3. スクリーニング結果(投資候補)", ""]
-    lines.append("適用フィルタ: 時価総額5,000億円以上 / 自己資本比率40%以上 / "
+    lines.append("適用フィルタ: 時価総額5,000億円以上 / 自己資本比率40%以上(金融は適用除外) / "
                  "セクター内売買代金上位3銘柄 / 売買代金1億円/日以上 / 下落見込みセクター除外")
     lines.append("")
     if not candidates:

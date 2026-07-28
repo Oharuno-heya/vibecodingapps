@@ -67,15 +67,26 @@ def _macro_tilts(snaps: dict) -> tuple[dict, dict]:
             add(["エネルギー", "商社"], -1, "原油安が逆風")
             add(["運輸", "公益"], 1, "燃料コスト減がメリット")
 
+    # 国内金利(日本10年債)— 日本の金融株には米金利より影響が大きいため重み2
+    jp10 = snaps.get("JP10Y")
+    if jp10 and jp10.get("change_5d_abs") is not None:
+        bp = jp10["change_5d_abs"] * 100  # %ポイント→bp
+        if bp >= 5:
+            add(["金融"], 2, "国内金利上昇(利上げ局面)で利ざや改善期待")
+            add(["不動産・建設"], -1, "国内金利上昇が逆風")
+        elif bp <= -5:
+            add(["金融"], -2, "国内金利低下が利ざやの逆風")
+            add(["不動産・建設"], 1, "国内金利低下がメリット")
+
     tnx = snaps.get("^TNX")
     if tnx and tnx.get("change_5d_pct") is not None:
         ch = tnx["change_5d_pct"]
         if ch > 4.0:
             add(["金融"], 1, "米金利上昇で利ざや改善期待")
-            add(["不動産・建設"], -1, "金利上昇が逆風")
+            add(["不動産・建設"], -1, "米金利上昇が逆風")
         elif ch < -4.0:
             add(["金融"], -1, "米金利低下が逆風")
-            add(["不動産・建設"], 1, "金利低下がメリット")
+            add(["不動産・建設"], 1, "米金利低下がメリット")
 
     vix = snaps.get("^VIX")
     if vix and vix.get("close") is not None and vix["close"] >= 25:

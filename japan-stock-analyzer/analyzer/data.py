@@ -25,8 +25,12 @@ MARKET_TICKERS = {
     "^VIX": "VIX(恐怖指数)",
     "^SOX": "SOX(半導体指数)",
     "^TNX": "米10年債利回り",
+    "JP10Y": "日本10年債利回り",
     "CL=F": "WTI原油先物",
 }
+
+# Yahooにデータがなく、Stooqのみで取得するティッカー
+_STOOQ_ONLY = {"JP10Y"}
 
 _REQUIRED = ["Open", "High", "Low", "Close", "Volume"]
 
@@ -58,6 +62,7 @@ _STOOQ_MAP = {
     "^VIX": "^vix",
     "^SOX": "^sox",
     "^TNX": "10usy.b",
+    "JP10Y": "10jpy.b",
     "CL=F": "cl.f",
 }
 
@@ -110,6 +115,8 @@ def fetch_history(ticker: str, period: str = "2y") -> pd.DataFrame | None:
     """1銘柄の日足を取得。Yahoo→Stooqの順に試し、失敗時は None。"""
     if is_mock():
         return _mock_history(ticker)
+    if ticker in _STOOQ_ONLY:
+        return _fetch_stooq(ticker)
     df = _fetch_yfinance(ticker, period)
     if df is not None:
         return df

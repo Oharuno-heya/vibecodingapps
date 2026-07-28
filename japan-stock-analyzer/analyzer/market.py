@@ -11,10 +11,12 @@ def _snapshot(df: pd.DataFrame) -> dict:
     prev = e.iloc[-2]
     chg = (last["Close"] / prev["Close"] - 1) * 100
     chg5 = (last["Close"] / e["Close"].iloc[-6] - 1) * 100 if len(e) > 6 else None
+    chg5_abs = last["Close"] - e["Close"].iloc[-6] if len(e) > 6 else None
     return {
         "close": float(last["Close"]),
         "change_pct": float(chg),
         "change_5d_pct": float(chg5) if chg5 is not None else None,
+        "change_5d_abs": float(chg5_abs) if chg5_abs is not None else None,  # 金利用(%pt)
         "above_sma25": bool(last["Close"] > last["sma25"]) if pd.notna(last["sma25"]) else None,
         "rsi": float(last["rsi14"]),
     }
@@ -68,6 +70,20 @@ def analyze_market() -> dict:
         elif jpy["change_pct"] < -0.3:
             reasons.append(f"ドル円は{jpy['close']:.1f}円へ円高進行、輸出株の重し")
             score -= 1
+
+    jp10 = snaps.get("JP10Y")
+    if jp10 and jp10.get("change_5d_abs") is not None:
+        bp = jp10["change_5d_abs"] * 100  # %ポイント→bp
+        if bp >= 5:
+            reasons.append(
+                f"国内10年債利回りが5日で{bp:+.0f}bp上昇({jp10['close']:.2f}%)。"
+                "利上げ・金利上昇局面は銀行など金融株の追い風"
+            )
+        elif bp <= -5:
+            reasons.append(
+                f"国内10年債利回りが5日で{bp:+.0f}bp低下({jp10['close']:.2f}%)。"
+                "金融株の利ざやには逆風"
+            )
 
     sox = snaps.get("^SOX")
     if sox and abs(sox["change_pct"]) > 1.5:
