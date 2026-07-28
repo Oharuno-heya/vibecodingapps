@@ -24,6 +24,8 @@ MARKET_TICKERS = {
     "^IXIC": "NASDAQ",
     "^VIX": "VIX(恐怖指数)",
     "^SOX": "SOX(半導体指数)",
+    "^TNX": "米10年債利回り",
+    "CL=F": "WTI原油先物",
 }
 
 _REQUIRED = ["Open", "High", "Low", "Close", "Volume"]
@@ -55,6 +57,8 @@ _STOOQ_MAP = {
     "JPY=X": "usdjpy",
     "^VIX": "^vix",
     "^SOX": "^sox",
+    "^TNX": "10usy.b",
+    "CL=F": "cl.f",
 }
 
 
@@ -155,32 +159,3 @@ def fetch_market_data() -> dict[str, pd.DataFrame]:
     return out
 
 
-def fetch_fundamentals(code: str) -> dict:
-    """PER/PBR/配当利回りなどの簡易ファンダ情報。取得失敗時は空dict。"""
-    if is_mock():
-        seed = int(hashlib.md5(code.encode()).hexdigest()[:8], 16)
-        rng = np.random.default_rng(seed)
-        return {
-            "per": round(float(rng.uniform(8, 35)), 1),
-            "pbr": round(float(rng.uniform(0.6, 4.0)), 2),
-            "dividend_yield": round(float(rng.uniform(0, 4.0)), 2),
-        }
-    import yfinance as yf
-
-    try:
-        info = yf.Ticker(f"{code}.T").info or {}
-        dy = info.get("dividendYield")
-        if dy is not None and dy < 1:  # 比率で返る場合は%へ
-            dy = dy * 100
-        if dy is not None and dy > 15:  # 異常値(特別配当やデータ不良)は欠損扱い
-            dy = None
-        per = info.get("trailingPE")
-        if per is not None and (per <= 0 or per > 500):
-            per = None
-        return {
-            "per": per,
-            "pbr": info.get("priceToBook"),
-            "dividend_yield": dy,
-        }
-    except Exception:
-        return {}

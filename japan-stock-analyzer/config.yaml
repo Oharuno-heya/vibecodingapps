@@ -8,8 +8,19 @@ screening:
   price_max: 30000           # 株価上限
   atr_pct_min: 1.0           # ATR% 下限(値動きが小さすぎる銘柄を除外)
   atr_pct_max: 4.5           # ATR% 上限(ボラが高すぎる=ハイリスク銘柄を除外)
-  min_score: 60              # ウォッチリスト追加の最低スコア(100点満点)
+  min_score: 60              # ウォッチリスト追加の最低スコア
   top_n: 10                  # 1回のスクリーニングで採用する最大銘柄数
+  sector_top_n: 3            # セクター(グループ)内で売買代金上位何銘柄に厳選するか
+  min_market_cap_yen: 500000000000  # 時価総額の下限(5000億円)大型株に厳選
+  min_equity_ratio_pct: 40.0        # 自己資本比率の下限(%)財務健全性フィルタ
+
+sector:
+  bonus_top: 10       # セクター総合評価 上位3グループの銘柄への加点
+  bonus_second: 5     # 4〜6位グループへの加点
+  exclude_score: -2   # 総合評価がこの値以下のセクターの銘柄は新規候補から除外
+
+fundamentals:
+  cache_days: 7       # 時価総額・自己資本比率などのキャッシュ有効日数
 
 risk:
   stop_loss_atr: 1.5         # 損切り幅 = ATR × この係数

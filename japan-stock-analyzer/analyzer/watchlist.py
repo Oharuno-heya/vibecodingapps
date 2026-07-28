@@ -22,6 +22,7 @@ def _conn() -> sqlite3.Connection:
             last_price REAL,
             plan_json TEXT,
             low_score_streak INTEGER DEFAULT 0,
+            streak_date TEXT,
             last_review TEXT
         );
         CREATE TABLE IF NOT EXISTS history (
@@ -36,6 +37,10 @@ def _conn() -> sqlite3.Connection:
         );
         """
     )
+    try:  # 旧スキーマからの移行
+        conn.execute("ALTER TABLE watchlist ADD COLUMN streak_date TEXT")
+    except sqlite3.OperationalError:
+        pass
     return conn
 
 
@@ -92,6 +97,7 @@ def review_watchlist(results_by_code: dict[str, dict], cfg: dict, session: str) 
     結果がない銘柄は None 扱い(スコア悪化とみなす)。
     """
     wl_cfg = cfg["watchlist"]
+    today = date.today().isoformat()
     updated, removed, buy_signals = [], [], []
     with _conn() as conn:
         rows = conn.execute("SELECT * FROM watchlist").fetchall()
@@ -101,16 +107,29 @@ def review_watchlist(results_by_code: dict[str, dict], cfg: dict, session: str) 
             days_watched = (date.today() - date.fromisoformat(row["added_date"])).days
 
             if res is None:
-                streak = row["low_score_streak"] + 1
+                low = True  # データ取得不可 or ハードフィルタ落ち
                 score, price, signal = None, row["last_price"], None
             else:
                 score, price, signal = res["score"], res["close"], res["signal"]
-                streak = row["low_score_streak"] + 1 if score < wl_cfg["remove_score"] else 0
+                # 低スコア or ファンダ基準未達(時価総額・自己資本比率)は低調扱い
+                low = score < wl_cfg["remove_score"] or res.get("fund_ok") is False
 
-            # 削除判定: 低スコア連続 or 観察期間超過
+            # 低調カウントは1日1回のみ加算(1日3回実行のため)
+            streak_date = row["streak_date"]
+            if low:
+                if streak_date == today:
+                    streak = row["low_score_streak"]
+                else:
+                    streak = row["low_score_streak"] + 1
+                    streak_date = today
+            else:
+                streak, streak_date = 0, None
+
+            # 削除判定: 低調が連続 or 観察期間超過
             reason = None
             if streak >= wl_cfg["low_score_streak"]:
-                reason = f"スコア{wl_cfg['remove_score']}未満(またはフィルタ落ち)が{streak}回連続"
+                reason = (f"低スコア・ファンダ基準未達・フィルタ落ちのいずれかが"
+                          f"{streak}日連続")
             elif days_watched > wl_cfg["max_watch_days"]:
                 reason = f"観察{days_watched}日でシグナル不発(上限{wl_cfg['max_watch_days']}日)"
 
@@ -124,9 +143,9 @@ def review_watchlist(results_by_code: dict[str, dict], cfg: dict, session: str) 
             plan_json = json.dumps(res["plan"], ensure_ascii=False) if res else row["plan_json"]
             conn.execute(
                 "UPDATE watchlist SET status=?, score=?, last_price=?, plan_json=?, "
-                "low_score_streak=?, last_review=? WHERE code=?",
+                "low_score_streak=?, streak_date=?, last_review=? WHERE code=?",
                 (status, score if score is not None else row["score"], price, plan_json,
-                 streak, datetime.now().isoformat(timespec="seconds"), code),
+                 streak, streak_date, datetime.now().isoformat(timespec="seconds"), code),
             )
             _log(conn, code, session, "buy_signal" if signal else "reviewed",
                  price, score, signal["type"] if signal else None)

@@ -65,13 +65,14 @@ def main() -> int:
     market = analyze_market()
     print(f"      市況判定: {market['stance']} (スコア {market['score']:+d})")
 
-    print("[2/5] ユニバースのスクリーニングを実行中...")
+    print("[2/5] スクリーニングとセクターローテーション分析を実行中...")
     cfg = load_config()
-    results = run_screening(cfg)
-    print(f"      {len(results)}銘柄を採点しました")
+    results, sector_info = run_screening(cfg, market)
+    top_sectors = [e["group"] for e in sector_info["entries"] if e["bonus"] > 0]
+    print(f"      {len(results)}銘柄を採点 / 上昇見込みセクター: {', '.join(top_sectors) or 'なし'}")
 
     print("[3/5] 新規候補をウォッチリストへ追加中...")
-    candidates = pick_candidates(results, cfg)
+    candidates = pick_candidates(results, sector_info, cfg)
     added = add_candidates(candidates, cfg, session)
     for a in added:
         print(f"      追加: {a['code']} {a['name']} (スコア {a['score']:.0f})")
@@ -84,7 +85,8 @@ def main() -> int:
     order_plans = build_order_plans(review["buy_signals"], cfg)
 
     print("[5/5] レポートを生成中...")
-    content = build_report(session, market, candidates, added, review, order_plans)
+    content = build_report(session, market, sector_info, candidates, added, review,
+                           order_plans)
     path = save_report(session, content)
     print(f"      レポート: {path}")
     print(f"      ウォッチリスト: {len(get_watchlist())}銘柄 / "

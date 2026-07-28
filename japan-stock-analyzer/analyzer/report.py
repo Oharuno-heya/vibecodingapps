@@ -57,32 +57,74 @@ def _plan_lines(plan: dict) -> str:
     )
 
 
+def _sector_section(sector_info: dict) -> list[str]:
+    lines = ["## 2. セクターローテーション分析", ""]
+    lines.append("セクター別の株価モメンタムとマクロ経済要因(円相場・原油・米金利・VIX・SOX)"
+                 "から、資金が向かいやすいセクターを評価します。")
+    lines.append("")
+    lines.append("| セクター | 20日騰落 | 5日騰落 | モメンタム | マクロ | 総合 | 評価 |")
+    lines.append("|---|---:|---:|---:|---:|---:|---|")
+    for e in sector_info["entries"]:
+        if e["bonus"] > 0:
+            label = "📈 上昇見込み(加点+" + str(e["bonus"]) + ")"
+        elif e["total"] < 0:
+            label = "📉 弱い(新規は慎重に)"
+        else:
+            label = "→ 中立"
+        lines.append(
+            f"| {e['group']} | {e['ret20']:+.1f}% | {e['ret5']:+.1f}% | "
+            f"{e['momentum']:+d} | {e['macro']:+d} | {e['total']:+d} | {label} |"
+        )
+    lines.append("")
+    macro_notes = []
+    for e in sector_info["entries"]:
+        for n in e["notes"]:
+            note = f"{e['group']}: {n}"
+            if note not in macro_notes:
+                macro_notes.append(note)
+    if macro_notes:
+        lines.append("**マクロ要因:**")
+        for n in macro_notes:
+            lines.append(f"- {n}")
+        lines.append("")
+    return lines
+
+
 def _candidates_section(candidates: list[dict], added: list[dict]) -> list[str]:
-    lines = ["## 2. スクリーニング結果(投資候補)", ""]
+    lines = ["## 3. スクリーニング結果(投資候補)", ""]
+    lines.append("適用フィルタ: 時価総額5,000億円以上 / 自己資本比率40%以上 / "
+                 "セクター内売買代金上位3銘柄 / 売買代金1億円/日以上 / 下落見込みセクター除外")
+    lines.append("")
     if not candidates:
         lines.append("本日の基準(スコア60点以上)を満たす銘柄はありませんでした。")
         lines.append("")
         return lines
     added_codes = {a["code"] for a in added}
-    lines.append("| コード | 銘柄 | セクター | スコア | 株価 | RSI | ATR% | シグナル | PER | 配当利回り |")
-    lines.append("|---|---|---|---:|---:|---:|---:|---|---:|---:|")
+    lines.append("| コード | 銘柄 | セクター | スコア | 内訳 | 株価 | RSI | シグナル "
+                 "| 時価総額 | 自己資本比率 | PER | 配当利回り |")
+    lines.append("|---|---|---|---:|---|---:|---:|---|---:|---:|---:|---:|")
     for c in candidates:
         f = c.get("fundamentals") or {}
         sig = c["signal"]["type"] if c["signal"] else "-"
         mark = " 🆕" if c["code"] in added_codes else ""
+        mcap = f.get("market_cap")
+        mcap_s = f"{mcap / 1e12:.1f}兆円" if mcap and mcap >= 1e12 else (
+            f"{mcap / 1e8:,.0f}億円" if mcap else "-")
+        breakdown = f"技{c['tech_score']:.0f}+セ{c['sector_bonus']}"
         lines.append(
-            f"| {c['code']}{mark} | {c['name']} | {c['sector']} | {c['score']:.0f} | "
-            f"{_fmt_num(c['close'])} | {c['rsi']:.0f} | {c['atr_pct']:.1f} | {sig} | "
-            f"{_fmt_num(f.get('per'))} | {_fmt_num(f.get('dividend_yield'), 2, '%')} |"
+            f"| {c['code']}{mark} | {c['name']} | {c['group']} | {c['score']:.0f} | "
+            f"{breakdown} | {_fmt_num(c['close'])} | {c['rsi']:.0f} | {sig} | {mcap_s} | "
+            f"{_fmt_num(f.get('equity_ratio'), 1, '%')} | {_fmt_num(f.get('per'))} | "
+            f"{_fmt_num(f.get('dividend_yield'), 2, '%')} |"
         )
     lines.append("")
-    lines.append("🆕 = 今回ウォッチリストに新規追加")
+    lines.append("🆕 = 今回ウォッチリストに新規追加 / 内訳: 技=テクニカル点, セ=セクター加点")
     lines.append("")
     return lines
 
 
 def _buy_signals_section(buy_signals: list[dict], order_plans: list[dict]) -> list[str]:
-    lines = ["## 3. 買いシグナルと売買プラン", ""]
+    lines = ["## 4. 買いシグナルと売買プラン", ""]
     if not buy_signals:
         lines.append("現在、買いシグナルが点灯している銘柄はありません。押し目・ブレイクを待ちます。")
         lines.append("")
@@ -124,7 +166,7 @@ def _buy_signals_section(buy_signals: list[dict], order_plans: list[dict]) -> li
 
 
 def _watchlist_section(review: dict) -> list[str]:
-    lines = ["## 4. ウォッチリスト(継続観察銘柄)", ""]
+    lines = ["## 5. ウォッチリスト(継続観察銘柄)", ""]
     wl = review["watchlist"]
     if not wl:
         lines.append("ウォッチリストは空です。次回のスクリーニングで候補を追加します。")
@@ -135,7 +177,7 @@ def _watchlist_section(review: dict) -> list[str]:
         for w in wl:
             status = "🔔 買いシグナル" if w["status"] == "buy_signal" else "👀 観察中"
             if w["low_score_streak"] > 0:
-                status += f"(低調{w['low_score_streak']}回)"
+                status += f"(低調{w['low_score_streak']}日)"
             lines.append(
                 f"| {w['code']} | {w['name']} | {w['added_date']} | {w['days_watched']}日 | "
                 f"{_fmt_num(w['score'], 0)} | {_fmt_num(w['price'])} | {status} | "
@@ -150,8 +192,8 @@ def _watchlist_section(review: dict) -> list[str]:
     return lines
 
 
-def build_report(session: str, market: dict, candidates: list[dict], added: list[dict],
-                 review: dict, order_plans: list[dict]) -> str:
+def build_report(session: str, market: dict, sector_info: dict, candidates: list[dict],
+                 added: list[dict], review: dict, order_plans: list[dict]) -> str:
     now = datetime.now(JST)
     lines = [
         f"# 日本株分析レポート {now.strftime('%Y-%m-%d')} {SESSION_LABELS[session]}",
@@ -162,6 +204,7 @@ def build_report(session: str, market: dict, candidates: list[dict], added: list
         "",
     ]
     lines += _market_section(market)
+    lines += _sector_section(sector_info)
     lines += _candidates_section(candidates, added)
     lines += _buy_signals_section(review["buy_signals"], order_plans)
     lines += _watchlist_section(review)
