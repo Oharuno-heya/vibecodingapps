@@ -38,6 +38,11 @@ watchlist:
   max_watch_days: 60         # シグナルが出ないまま観察を続ける最大日数
 
 trading:
-  # 自動売買は楽天証券/SBI証券に個人向け公式APIがないため「発注案の生成」まで対応
+  # 楽天証券/SBI証券には個人向け発注APIがないため、実口座への発注は行わない。
+  # paper = 仮想売買シミュレーション(買いシグナルに従い自動執行・損益管理)/ off = 無効
+  mode: paper
+  initial_capital: 1000000     # ペーパートレードの初期資金(円)
+  max_positions: 5             # 同時保有の最大銘柄数
+  max_hold_days: 45            # 保有期間の上限(暦日)スイング想定
   budget_per_position: 300000  # 1銘柄あたりの投資予算(円)
   lot_size: 100                # 単元株数

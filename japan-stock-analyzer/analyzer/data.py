@@ -29,8 +29,48 @@ MARKET_TICKERS = {
     "CL=F": "WTI原油先物",
 }
 
-# Yahooにデータがなく、Stooqのみで取得するティッカー
+# Yahooにデータがないティッカー(専用ソースで取得)
 _STOOQ_ONLY = {"JP10Y"}
+
+# 財務省 国債金利情報(公式・無料)
+_MOF_JGB_URL = "https://www.mof.go.jp/jgbs/reference/interest_rate/jgbcm.csv"
+
+
+def _fetch_jgb10y() -> pd.DataFrame | None:
+    """財務省の国債金利CSVから日本10年債利回りの日次系列を取得。"""
+    try:
+        req = urllib.request.Request(_MOF_JGB_URL, headers={"User-Agent": "Mozilla/5.0"})
+        with urllib.request.urlopen(req, timeout=30) as resp:
+            text = resp.read().decode("shift_jis", errors="replace")
+        lines = [ln for ln in text.splitlines() if ln.strip()]
+        start = next((i for i, ln in enumerate(lines) if ln.startswith("基準日")), None)
+        if start is None:
+            return None
+        header = lines[start].split(",")
+        idx10 = header.index("10年")
+        era = {"S": 1925, "H": 1988, "R": 2018}  # 和暦→西暦(元年=era+1)
+        rows = []
+        for ln in lines[start + 1:]:
+            parts = ln.split(",")
+            d = parts[0].strip() if parts else ""
+            if len(parts) <= idx10 or not d or d[0] not in era:
+                continue
+            try:
+                y, m, day = d[1:].split(".")
+                dt = pd.Timestamp(era[d[0]] + int(y), int(m), int(day))
+                val = float(parts[idx10])
+            except (ValueError, IndexError):
+                continue
+            rows.append((dt, val))
+        if not rows:
+            return None
+        df = pd.DataFrame(rows, columns=["Date", "Close"]).set_index("Date").tail(300)
+        for col in ("Open", "High", "Low"):
+            df[col] = df["Close"]
+        df["Volume"] = 0.0
+        return df[_REQUIRED]
+    except Exception:
+        return None
 
 _REQUIRED = ["Open", "High", "Low", "Close", "Volume"]
 
@@ -115,6 +155,9 @@ def fetch_history(ticker: str, period: str = "2y") -> pd.DataFrame | None:
     """1銘柄の日足を取得。Yahoo→Stooqの順に試し、失敗時は None。"""
     if is_mock():
         return _mock_history(ticker)
+    if ticker == "JP10Y":  # 財務省CSV→Stooqの順
+        df = _fetch_jgb10y()
+        return df if df is not None else _fetch_stooq(ticker)
     if ticker in _STOOQ_ONLY:
         return _fetch_stooq(ticker)
     df = _fetch_yfinance(ticker, period)

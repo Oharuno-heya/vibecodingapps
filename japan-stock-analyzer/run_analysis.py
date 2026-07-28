@@ -13,6 +13,7 @@ from zoneinfo import ZoneInfo
 
 from analyzer.config import load_config
 from analyzer.market import analyze_market
+from analyzer.portfolio import execute_trades
 from analyzer.report import build_report, save_report
 from analyzer.screener import pick_candidates, run_screening
 from analyzer.watchlist import add_candidates, get_watchlist, review_watchlist
@@ -61,32 +62,40 @@ def main() -> int:
     args = parser.parse_args()
     session = args.session or detect_session()
 
-    print(f"[1/5] セッション: {session} / 市況分析を実行中...")
+    print(f"[1/6] セッション: {session} / 市況分析を実行中...")
     market = analyze_market()
     print(f"      市況判定: {market['stance']} (スコア {market['score']:+d})")
 
-    print("[2/5] スクリーニングとセクターローテーション分析を実行中...")
+    print("[2/6] スクリーニングとセクターローテーション分析を実行中...")
     cfg = load_config()
     results, sector_info = run_screening(cfg, market)
     top_sectors = [e["group"] for e in sector_info["entries"] if e["bonus"] > 0]
     print(f"      {len(results)}銘柄を採点 / 上昇見込みセクター: {', '.join(top_sectors) or 'なし'}")
 
-    print("[3/5] 新規候補をウォッチリストへ追加中...")
+    print("[3/6] 新規候補をウォッチリストへ追加中...")
     candidates = pick_candidates(results, sector_info, cfg)
     added = add_candidates(candidates, cfg, session)
     for a in added:
         print(f"      追加: {a['code']} {a['name']} (スコア {a['score']:.0f})")
 
-    print("[4/5] ウォッチリストを再評価中...")
+    print("[4/6] ウォッチリストを再評価中...")
     results_by_code = {r["code"]: r for r in results}
     review = review_watchlist(results_by_code, cfg, session)
     for r in review["removed"]:
         print(f"      除外: {r['code']} {r['name']} ({r['reason']})")
     order_plans = build_order_plans(review["buy_signals"], cfg)
 
-    print("[5/5] レポートを生成中...")
+    print("[5/6] ペーパートレードを執行中...")
+    portfolio = execute_trades(review, results_by_code, cfg, session)
+    for ev in portfolio.get("events", []):
+        print(f"      {ev}")
+    if portfolio.get("enabled"):
+        print(f"      総資産: {portfolio['total']:,.0f}円 "
+              f"(現金 {portfolio['cash']:,.0f}円 / ポジション {len(portfolio['positions'])}銘柄)")
+
+    print("[6/6] レポートを生成中...")
     content = build_report(session, market, sector_info, candidates, added, review,
-                           order_plans)
+                           order_plans, portfolio)
     path = save_report(session, content)
     print(f"      レポート: {path}")
     print(f"      ウォッチリスト: {len(get_watchlist())}銘柄 / "

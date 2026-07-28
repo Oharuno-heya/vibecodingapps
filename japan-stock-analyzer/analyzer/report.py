@@ -192,8 +192,55 @@ def _watchlist_section(review: dict) -> list[str]:
     return lines
 
 
+def _portfolio_section(pf: dict) -> list[str]:
+    lines = ["## 6. 自動売買(ペーパートレード)", ""]
+    if not pf.get("enabled"):
+        lines.append("ペーパートレードは無効です(`config.yaml` の `trading.mode: paper` で有効化)。")
+        lines.append("")
+        return lines
+    ret_pct = (pf["total"] / pf["initial"] - 1) * 100
+    win_rate = (pf["wins"] / pf["closed_count"] * 100) if pf["closed_count"] else None
+    lines.append(
+        f"**総資産: {pf['total']:,.0f}円**(現金 {pf['cash']:,.0f}円 + "
+        f"評価額 {pf['pos_value']:,.0f}円)/ 初期資金比 **{ret_pct:+.2f}%** / "
+        f"累計実現損益 {pf['realized']:+,.0f}円"
+        + (f" / 勝率 {win_rate:.0f}%({pf['wins']}/{pf['closed_count']})" if win_rate is not None else "")
+    )
+    lines.append("")
+    if pf["events"]:
+        lines.append("**今回の約定:**")
+        for ev in pf["events"]:
+            lines.append(f"- {ev}")
+        lines.append("")
+    if pf["positions"]:
+        lines.append("| 銘柄 | 取得日 | 取得単価 | 株数 | 現在値 | 評価損益 | 利確ライン | 損切ライン |")
+        lines.append("|---|---|---:|---:|---:|---:|---:|---:|")
+        for p in pf["positions"]:
+            lines.append(
+                f"| {p['code']} {p['name']} | {p['entry_date']} | {p['entry_price']:,.1f} | "
+                f"{p['shares']} | {p['current']:,.1f} | {p['unrealized']:+,.0f}円 "
+                f"({p['unrealized_pct']:+.1f}%) | {p['profit_target']:,.1f} | {p['stop_loss']:,.1f} |"
+            )
+        lines.append("")
+    else:
+        lines.append("現在保有中のポジションはありません。")
+        lines.append("")
+    if pf["closed_recent"]:
+        lines.append("**直近の決済:**")
+        for c in pf["closed_recent"]:
+            lines.append(
+                f"- {c['exit_date']} {c['code']} {c['name']}: {c['exit_reason']} "
+                f"@{c['exit_price']:,.1f}円(損益 {c['pnl']:+,.0f}円)"
+            )
+        lines.append("")
+    lines.append("*約定は分析時点の終値ベースのシミュレーションです。実際の証券口座への発注は行われません。*")
+    lines.append("")
+    return lines
+
+
 def build_report(session: str, market: dict, sector_info: dict, candidates: list[dict],
-                 added: list[dict], review: dict, order_plans: list[dict]) -> str:
+                 added: list[dict], review: dict, order_plans: list[dict],
+                 portfolio: dict) -> str:
     now = datetime.now(JST)
     lines = [
         f"# 日本株分析レポート {now.strftime('%Y-%m-%d')} {SESSION_LABELS[session]}",
@@ -208,6 +255,7 @@ def build_report(session: str, market: dict, sector_info: dict, candidates: list
     lines += _candidates_section(candidates, added)
     lines += _buy_signals_section(review["buy_signals"], order_plans)
     lines += _watchlist_section(review)
+    lines += _portfolio_section(portfolio)
     lines += [
         "---",
         "",
