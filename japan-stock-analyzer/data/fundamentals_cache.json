@@ -1,0 +1,450 @@
+{
+ "1605": {
+  "market_cap": 4144368975872,
+  "equity_ratio": 61.4,
+  "per": 10.8,
+  "pbr": 0.85,
+  "dividend_yield": 2.96,
+  "fetched": "2026-07-28"
+ },
+ "1928": {
+  "market_cap": 2370607251456,
+  "equity_ratio": 42.7,
+  "per": 9.2,
+  "pbr": 1.1,
+  "dividend_yield": 4.01,
+  "fetched": "2026-07-28"
+ },
+ "2269": {
+  "market_cap": 1039404892160,
+  "equity_ratio": 61.2,
+  "per": 29.6,
+  "pbr": 1.35,
+  "dividend_yield": 2.9,
+  "fetched": "2026-07-28"
+ },
+ "2502": {
+  "market_cap": 2516862631936,
+  "equity_ratio": 49.4,
+  "per": 21.1,
+  "pbr": 0.84,
+  "dividend_yield": 3.7,
+  "fetched": "2026-07-28"
+ },
+ "2801": {
+  "market_cap": 1549171032064,
+  "equity_ratio": 74.6,
+  "per": 25.4,
+  "pbr": 2.76,
+  "dividend_yield": 1.53,
+  "fetched": "2026-07-28"
+ },
+ "2802": {
+  "market_cap": 4665897910272,
+  "equity_ratio": 42.5,
+  "per": 35.3,
+  "pbr": 6.08,
+  "dividend_yield": null,
+  "fetched": "2026-07-28"
+ },
+ "2914": {
+  "market_cap": 11802577469440,
+  "equity_ratio": 48.5,
+  "per": 23.7,
+  "pbr": 2.89,
+  "dividend_yield": 3.71,
+  "fetched": "2026-07-28"
+ },
+ "3092": {
+  "market_cap": 1041401970688,
+  "equity_ratio": 53.9,
+  "per": 21.8,
+  "pbr": 9.78,
+  "dividend_yield": 3.43,
+  "fetched": "2026-07-28"
+ },
+ "3382": {
+  "market_cap": 5098548756480,
+  "equity_ratio": 39.6,
+  "per": 18.6,
+  "pbr": 1.38,
+  "dividend_yield": 2.81,
+  "fetched": "2026-07-28"
+ },
+ "4063": {
+  "market_cap": 10920127365120,
+  "equity_ratio": 78.9,
+  "per": 23.2,
+  "pbr": 2.44,
+  "dividend_yield": 1.89,
+  "fetched": "2026-07-28"
+ },
+ "4502": {
+  "market_cap": 9171740131328,
+  "equity_ratio": 47.9,
+  "per": null,
+  "pbr": 1.22,
+  "dividend_yield": 3.54,
+  "fetched": "2026-07-28"
+ },
+ "4519": {
+  "market_cap": 11518695440384,
+  "equity_ratio": 82.1,
+  "per": 24.5,
+  "pbr": 5.68,
+  "dividend_yield": 1.93,
+  "fetched": "2026-07-28"
+ },
+ "4543": {
+  "market_cap": 3376465051648,
+  "equity_ratio": 68.5,
+  "per": 24.8,
+  "pbr": 2.13,
+  "dividend_yield": 1.6,
+  "fetched": "2026-07-28"
+ },
+ "4568": {
+  "market_cap": 5257888268288,
+  "equity_ratio": 41.5,
+  "per": 20.6,
+  "pbr": 3.16,
+  "dividend_yield": 3.54,
+  "fetched": "2026-07-28"
+ },
+ "4661": {
+  "market_cap": 4761737232384,
+  "equity_ratio": 67.5,
+  "per": 39.0,
+  "pbr": 4.33,
+  "dividend_yield": null,
+  "fetched": "2026-07-28"
+ },
+ "4911": {
+  "market_cap": 1299959250944,
+  "equity_ratio": 47.4,
+  "per": null,
+  "pbr": 2.14,
+  "dividend_yield": 1.83,
+  "fetched": "2026-07-28"
+ },
+ "5020": {
+  "market_cap": 3459574923264,
+  "equity_ratio": 37.1,
+  "per": 13.5,
+  "pbr": 1.03,
+  "dividend_yield": 2.57,
+  "fetched": "2026-07-28"
+ },
+ "5801": {
+  "market_cap": 2116122181632,
+  "equity_ratio": 39.1,
+  "per": 29.2,
+  "pbr": 5.07,
+  "dividend_yield": null,
+  "fetched": "2026-07-28"
+ },
+ "5802": {
+  "market_cap": 6824298807296,
+  "equity_ratio": 56.9,
+  "per": 18.5,
+  "pbr": 2.49,
+  "dividend_yield": 1.66,
+  "fetched": "2026-07-28"
+ },
+ "6098": {
+  "market_cap": 17534399021056,
+  "equity_ratio": 56.8,
+  "per": 36.2,
+  "pbr": 11.11,
+  "dividend_yield": null,
+  "fetched": "2026-07-28"
+ },
+ "6178": {
+  "market_cap": 6914765225984,
+  "equity_ratio": 3.1,
+  "per": 19.1,
+  "pbr": 0.71,
+  "dividend_yield": 2.38,
+  "fetched": "2026-07-28"
+ },
+ "6501": {
+  "market_cap": 21928781807616,
+  "equity_ratio": 43.7,
+  "per": 27.7,
+  "pbr": 3.35,
+  "dividend_yield": 1.09,
+  "fetched": "2026-07-28"
+ },
+ "6723": {
+  "market_cap": 6281088729088,
+  "equity_ratio": 58.5,
+  "per": null,
+  "pbr": 2.47,
+  "dividend_yield": null,
+  "fetched": "2026-07-28"
+ },
+ "6758": {
+  "market_cap": 21504955777024,
+  "equity_ratio": 51.8,
+  "per": 21.3,
+  "pbr": 2.66,
+  "dividend_yield": null,
+  "fetched": "2026-07-28"
+ },
+ "6857": {
+  "market_cap": 18468384538624,
+  "equity_ratio": 67.9,
+  "per": 49.4,
+  "pbr": 23.26,
+  "dividend_yield": null,
+  "fetched": "2026-07-28"
+ },
+ "6954": {
+  "market_cap": 5947015561216,
+  "equity_ratio": 89.2,
+  "per": 35.7,
+  "pbr": 3.19,
+  "dividend_yield": 1.58,
+  "fetched": "2026-07-28"
+ },
+ "6981": {
+  "market_cap": 13020528902144,
+  "equity_ratio": 85.0,
+  "per": 55.9,
+  "pbr": 4.79,
+  "dividend_yield": null,
+  "fetched": "2026-07-28"
+ },
+ "7011": {
+  "market_cap": 12785596497920,
+  "equity_ratio": 35.2,
+  "per": 36.4,
+  "pbr": 4.14,
+  "dividend_yield": null,
+  "fetched": "2026-07-28"
+ },
+ "7012": {
+  "market_cap": 2335368282112,
+  "equity_ratio": 26.4,
+  "per": 20.7,
+  "pbr": 2.55,
+  "dividend_yield": 1.46,
+  "fetched": "2026-07-28"
+ },
+ "7203": {
+  "market_cap": 35617886961664,
+  "equity_ratio": 37.8,
+  "per": 10.2,
+  "pbr": 0.98,
+  "dividend_yield": 3.37,
+  "fetched": "2026-07-28"
+ },
+ "7267": {
+  "market_cap": 6274839740416,
+  "equity_ratio": 35.3,
+  "per": null,
+  "pbr": 0.53,
+  "dividend_yield": 4.42,
+  "fetched": "2026-07-28"
+ },
+ "7269": {
+  "market_cap": 4009995796480,
+  "equity_ratio": 51.0,
+  "per": 9.1,
+  "pbr": 1.19,
+  "dividend_yield": 2.53,
+  "fetched": "2026-07-28"
+ },
+ "7309": {
+  "market_cap": 1622051258368,
+  "equity_ratio": 92.5,
+  "per": 49.1,
+  "pbr": 1.89,
+  "dividend_yield": 1.91,
+  "fetched": "2026-07-28"
+ },
+ "7733": {
+  "market_cap": 1915200995328,
+  "equity_ratio": 52.8,
+  "per": 29.5,
+  "pbr": 2.44,
+  "dividend_yield": 1.65,
+  "fetched": "2026-07-28"
+ },
+ "7832": {
+  "market_cap": 2900256882688,
+  "equity_ratio": 72.3,
+  "per": 20.8,
+  "pbr": 3.37,
+  "dividend_yield": 1.09,
+  "fetched": "2026-07-28"
+ },
+ "7974": {
+  "market_cap": 8829856120832,
+  "equity_ratio": 77.6,
+  "per": 21.0,
+  "pbr": 2.99,
+  "dividend_yield": 2.95,
+  "fetched": "2026-07-28"
+ },
+ "8001": {
+  "market_cap": 13969340235776,
+  "equity_ratio": 39.4,
+  "per": 15.6,
+  "pbr": 2.12,
+  "dividend_yield": 2.22,
+  "fetched": "2026-07-28"
+ },
+ "8031": {
+  "market_cap": 13859181035520,
+  "equity_ratio": 42.1,
+  "per": 16.8,
+  "pbr": 1.58,
+  "dividend_yield": 2.81,
+  "fetched": "2026-07-28"
+ },
+ "8058": {
+  "market_cap": 17487316910080,
+  "equity_ratio": 39.1,
+  "per": 22.8,
+  "pbr": 1.85,
+  "dividend_yield": 2.58,
+  "fetched": "2026-07-28"
+ },
+ "8267": {
+  "market_cap": 3928607162368,
+  "equity_ratio": 7.9,
+  "per": 52.8,
+  "pbr": 3.25,
+  "dividend_yield": 1.02,
+  "fetched": "2026-07-28"
+ },
+ "8306": {
+  "market_cap": 41284630740992,
+  "equity_ratio": 5.2,
+  "per": 17.2,
+  "pbr": 2.11,
+  "dividend_yield": 2.53,
+  "fetched": "2026-07-28"
+ },
+ "8316": {
+  "market_cap": 26432413630464,
+  "equity_ratio": 4.8,
+  "per": 16.8,
+  "pbr": 1.67,
+  "dividend_yield": 1.87,
+  "fetched": "2026-07-28"
+ },
+ "8411": {
+  "market_cap": 20003160064000,
+  "equity_ratio": 3.7,
+  "per": 16.3,
+  "pbr": 1.77,
+  "dividend_yield": 1.74,
+  "fetched": "2026-07-28"
+ },
+ "8801": {
+  "market_cap": 4293946507264,
+  "equity_ratio": 31.9,
+  "per": 15.8,
+  "pbr": 1.32,
+  "dividend_yield": 2.33,
+  "fetched": "2026-07-28"
+ },
+ "8802": {
+  "market_cap": 4872672378880,
+  "equity_ratio": 31.4,
+  "per": 22.3,
+  "pbr": 1.82,
+  "dividend_yield": 1.22,
+  "fetched": "2026-07-28"
+ },
+ "9101": {
+  "market_cap": 2429407985664,
+  "equity_ratio": 59.1,
+  "per": 11.9,
+  "pbr": 0.79,
+  "dividend_yield": 3.29,
+  "fetched": "2026-07-28"
+ },
+ "9104": {
+  "market_cap": 2014620549120,
+  "equity_ratio": 48.2,
+  "per": 9.5,
+  "pbr": 0.7,
+  "dividend_yield": 3.47,
+  "fetched": "2026-07-28"
+ },
+ "9107": {
+  "market_cap": 1705274900480,
+  "equity_ratio": 76.9,
+  "per": 13.4,
+  "pbr": 0.99,
+  "dividend_yield": 4.21,
+  "fetched": "2026-07-28"
+ },
+ "9201": {
+  "market_cap": 1284540071936,
+  "equity_ratio": 40.3,
+  "per": 9.7,
+  "pbr": 1.0,
+  "dividend_yield": 3.27,
+  "fetched": "2026-07-28"
+ },
+ "9202": {
+  "market_cap": 1366972170240,
+  "equity_ratio": 37.7,
+  "per": 9.8,
+  "pbr": 0.95,
+  "dividend_yield": 1.95,
+  "fetched": "2026-07-28"
+ },
+ "9433": {
+  "market_cap": 11395366125568,
+  "equity_ratio": 26.6,
+  "per": 16.3,
+  "pbr": 2.24,
+  "dividend_yield": 2.84,
+  "fetched": "2026-07-28"
+ },
+ "9434": {
+  "market_cap": 11040022593536,
+  "equity_ratio": 16.0,
+  "per": 20.5,
+  "pbr": 3.73,
+  "dividend_yield": 3.85,
+  "fetched": "2026-07-28"
+ },
+ "9503": {
+  "market_cap": 2696017346560,
+  "equity_ratio": 35.1,
+  "per": 7.1,
+  "pbr": 0.78,
+  "dividend_yield": 3.29,
+  "fetched": "2026-07-28"
+ },
+ "9531": {
+  "market_cap": 2060544770048,
+  "equity_ratio": 44.1,
+  "per": 9.5,
+  "pbr": 1.21,
+  "dividend_yield": 1.91,
+  "fetched": "2026-07-28"
+ },
+ "9766": {
+  "market_cap": 2730107600896,
+  "equity_ratio": 75.4,
+  "per": 27.3,
+  "pbr": 4.84,
+  "dividend_yield": 1.15,
+  "fetched": "2026-07-28"
+ },
+ "9984": {
+  "market_cap": 29036015255552,
+  "equity_ratio": 25.7,
+  "per": 5.8,
+  "pbr": 1.65,
+  "dividend_yield": null,
+  "fetched": "2026-07-28"
+ }
+}
