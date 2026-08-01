@@ -20,7 +20,16 @@
 
 朝・昼の分析結果サマリー(市況・買いシグナル・売買プラン・月次進捗)は、リポジトリの **GitHub Issue「📈 日本株分析通知 YYYY-MM」にコメント**として投稿され、オーナーが@メンションされます。GitHubの通知設定に応じてメール・スマホアプリのプッシュで受け取れます(GitHubモバイルアプリのインストール推奨)。
 
-Discordにも通知したい場合は、リポジトリの Settings → Secrets and variables → Actions に `DISCORD_WEBHOOK_URL` を登録するだけで有効になります。通知するセッションは `config.yaml` の `notify.sessions` で変更できます。
+さらに、リポジトリの **Settings → Secrets and variables → Actions** に以下のSecretを登録すると、対応するサービスにも同じ内容が届きます(複数併用可・登録したものだけ有効)。
+
+| サービス | 必要なSecret | 取得方法 |
+|---|---|---|
+| Discord | `DISCORD_WEBHOOK_URL` | サーバー設定 → 連携サービス → ウェブフック → 新しいウェブフック → URLをコピー |
+| Slack | `SLACK_WEBHOOK_URL` | Slack API で Incoming Webhook を作成 |
+| LINE | `LINE_CHANNEL_ACCESS_TOKEN` と `LINE_USER_ID` | [LINE Developers](https://developers.line.biz/)でMessaging APIチャネルを作成 → チャネルアクセストークン(長期)を発行。`LINE_USER_ID` はチャネル作成後の「あなたのユーザーID」(Basic settings内)。作成したBot(公式アカウント)を自分のLINEで友だち追加しておく。無料枠は月200通(本ツールは月44通程度) |
+| Telegram | `TELEGRAM_BOT_TOKEN` と `TELEGRAM_CHAT_ID` | @BotFather でBot作成→トークン取得。Botに何かメッセージを送った後 `https://api.telegram.org/bot<トークン>/getUpdates` で自分のchat idを確認 |
+
+※ LINE Notify は2025年3月にサービス終了したため、公式のMessaging APIを使用しています。通知するセッションは `config.yaml` の `notify.sessions` で変更できます。
 
 ### 月次目標
 

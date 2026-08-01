@@ -1,13 +1,18 @@
 #!/usr/bin/env python3
 """分析結果の通知。
 
-- GitHub Issue(月ごとに1つ)へコメント投稿。オーナーを@メンションするため、
-  GitHubの通知設定に応じてメール・スマホアプリのプッシュ通知が届く。
-- DISCORD_WEBHOOK_URL 環境変数(GitHub Secrets)が設定されていればDiscordにも通知。
+通知先(GitHub Secretsに設定されたもののみ有効になる):
+- GitHub Issue(既定で有効): 月ごとのIssueへコメント投稿。オーナーを@メンション
+  するため、GitHubの通知設定に応じてメール・スマホアプリのプッシュ通知が届く。
+- Discord : DISCORD_WEBHOOK_URL
+- Slack   : SLACK_WEBHOOK_URL
+- LINE    : LINE_CHANNEL_ACCESS_TOKEN + LINE_USER_ID(Messaging API。無料枠 月200通)
+- Telegram: TELEGRAM_BOT_TOKEN + TELEGRAM_CHAT_ID
 
 GitHub Actions から実行される想定(GITHUB_TOKEN / GITHUB_REPOSITORY を使用)。
 通知対象セッションは config.yaml の notify.sessions で制御する。
 """
+import re
 import json
 import os
 import sys
@@ -21,6 +26,24 @@ from analyzer.config import REPORTS_DIR, load_config  # noqa: E402
 from run_analysis import detect_session  # noqa: E402
 
 JST = ZoneInfo("Asia/Tokyo")
+
+
+def _post_json(url: str, payload: dict, headers: dict | None = None) -> None:
+    req = urllib.request.Request(
+        url,
+        data=json.dumps(payload).encode(),
+        headers={"Content-Type": "application/json",
+                 "User-Agent": "japan-stock-analyzer", **(headers or {})},
+    )
+    urllib.request.urlopen(req, timeout=30)
+
+
+def _plain_text(md: str) -> str:
+    """LINE/Telegram向けにMarkdown装飾を落としたプレーンテキストへ変換。"""
+    text = md
+    text = re.sub(r"\[([^\]]+)\]\(([^)]+)\)", r"\1\n\2", text)  # リンク → テキスト+URL
+    text = text.replace("**", "").replace("## ", "").replace("### ", "")
+    return text.strip()
 
 
 def _gh_api(path: str, token: str, data: dict | None = None):
@@ -88,20 +111,55 @@ def main() -> int:
     if hook:
         try:
             for i in range(0, len(body), 1900):  # Discordの2000字制限対応
-                req = urllib.request.Request(
-                    hook,
-                    data=json.dumps({"content": body[i:i + 1900]}).encode(),
-                    headers={"Content-Type": "application/json",
-                             "User-Agent": "japan-stock-analyzer"},
-                )
-                urllib.request.urlopen(req, timeout=30)
+                _post_json(hook, {"content": body[i:i + 1900]})
             print("Discordに通知しました")
             ok = True
         except Exception as e:
             print(f"Discord通知に失敗: {e}")
 
+    slack = os.environ.get("SLACK_WEBHOOK_URL")
+    if slack:
+        try:
+            _post_json(slack, {"text": body.replace("**", "*")})  # mrkdwn変換
+            print("Slackに通知しました")
+            ok = True
+        except Exception as e:
+            print(f"Slack通知に失敗: {e}")
+
+    line_token = os.environ.get("LINE_CHANNEL_ACCESS_TOKEN")
+    line_user = os.environ.get("LINE_USER_ID")
+    if line_token and line_user:
+        try:
+            text = _plain_text(body)
+            _post_json(
+                "https://api.line.me/v2/bot/message/push",
+                {"to": line_user,
+                 "messages": [{"type": "text", "text": text[:4900]}]},
+                headers={"Authorization": f"Bearer {line_token}"},
+            )
+            print("LINEに通知しました")
+            ok = True
+        except Exception as e:
+            print(f"LINE通知に失敗: {e}")
+
+    tg_token = os.environ.get("TELEGRAM_BOT_TOKEN")
+    tg_chat = os.environ.get("TELEGRAM_CHAT_ID")
+    if tg_token and tg_chat:
+        try:
+            text = _plain_text(body)
+            for i in range(0, len(text), 4000):  # Telegramの4096字制限対応
+                _post_json(
+                    f"https://api.telegram.org/bot{tg_token}/sendMessage",
+                    {"chat_id": tg_chat, "text": text[i:i + 4000],
+                     "disable_web_page_preview": True},
+                )
+            print("Telegramに通知しました")
+            ok = True
+        except Exception as e:
+            print(f"Telegram通知に失敗: {e}")
+
     if not ok:
-        print("有効な通知先がありません(GITHUB_TOKEN / DISCORD_WEBHOOK_URL 未設定)")
+        print("有効な通知先がありません(GITHUB_TOKEN等の環境変数が未設定)")
     return 0
 
 
