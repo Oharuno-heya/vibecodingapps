@@ -16,6 +16,7 @@ from analyzer.market import analyze_market
 from analyzer.portfolio import execute_trades
 from analyzer.report import build_report, build_summary, save_report, save_summary
 from analyzer.screener import pick_candidates, run_screening
+from analyzer.site import build_site
 from analyzer.targets import size_position, trading_params
 from analyzer.watchlist import add_candidates, get_watchlist, review_watchlist
 
@@ -101,7 +102,9 @@ def main() -> int:
                            order_plans, portfolio)
     path = save_report(session, content)
     save_summary(build_summary(session, market, sector_info, review, order_plans, portfolio))
+    site_path = build_site(session, market, sector_info, review, order_plans, portfolio)
     print(f"      レポート: {path}")
+    print(f"      ダッシュボード: {site_path}")
     print(f"      ウォッチリスト: {len(get_watchlist())}銘柄 / "
           f"買いシグナル: {len(review['buy_signals'])}件")
     return 0
