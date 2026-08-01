@@ -1,8 +1,6 @@
 name: 日本株自動分析(朝・昼・夕)
 
 on:
-  push:  # 一時的な動作確認用トリガー(確認後に削除)
-    branches: [claude/japan-stock-analysis-tool-627huj]
   schedule:
     # JST = UTC+9。平日のみ実行(cronはUTC基準のため曜日をずらしている)
     - cron: "30 23 * * 0-4"   # 朝 8:30 JST(月〜金)寄り付き前分析+通知
