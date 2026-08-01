@@ -1,11 +1,13 @@
 name: 日本株自動分析(朝・昼・夕)
 
 on:
+  push:  # 一時的な動作確認用トリガー(確認後に削除)
+    branches: [claude/japan-stock-analysis-tool-627huj]
   schedule:
     # JST = UTC+9。平日のみ実行(cronはUTC基準のため曜日をずらしている)
-    - cron: "15 23 * * 0-4"   # 朝 8:15 JST(月〜金)寄り付き前分析
-    - cron: "15 3 * * 1-5"    # 昼 12:15 JST(月〜金)前場終了後分析
-    - cron: "30 7 * * 1-5"    # 夕 16:30 JST(月〜金)大引け後分析
+    - cron: "30 23 * * 0-4"   # 朝 8:30 JST(月〜金)寄り付き前分析+通知
+    - cron: "30 3 * * 1-5"    # 昼 12:30 JST(月〜金)前場終了後分析+通知
+    - cron: "30 7 * * 1-5"    # 夕 16:30 JST(月〜金)大引け後スクリーニング(通知なし)
   workflow_dispatch:
     inputs:
       session:
@@ -16,6 +18,7 @@ on:
 
 permissions:
   contents: write
+  issues: write
 
 concurrency:
   group: stock-analysis
@@ -59,3 +62,12 @@ jobs:
           git commit -m "chore: 自動分析レポート $(TZ=Asia/Tokyo date '+%Y-%m-%d %H:%M JST')"
           git pull --rebase origin ${{ github.ref_name }} || true
           git push origin HEAD:${{ github.ref_name }}
+
+      - name: 通知(GitHub Issue / Discord)
+        working-directory: japan-stock-analyzer
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          SESSION: ${{ github.event.inputs.session }}
+          NOTIFY_FORCE: ${{ github.event_name == 'push' && '1' || '' }}
+        run: python notify.py

@@ -151,7 +151,8 @@ def _buy_signals_section(buy_signals: list[dict], order_plans: list[dict]) -> li
     if order_plans:
         lines.append("### 発注案(参考)")
         lines.append("")
-        lines.append("楽天証券・SBI証券には個人向け発注APIがないため、以下は手動発注用の注文案です。")
+        lines.append("楽天証券・SBI証券には個人向け発注APIがないため、以下は手動発注用の注文案です。"
+                     "100株未満の株数は単元未満株(楽天かぶミニ/SBI S株)で発注してください。")
         lines.append("")
         lines.append("| コード | 銘柄 | 注文 | 株数 | 概算金額 | 利確(指値目安) | 損切り(逆指値) |")
         lines.append("|---|---|---|---:|---:|---:|---:|")
@@ -198,15 +199,35 @@ def _portfolio_section(pf: dict) -> list[str]:
         lines.append("ペーパートレードは無効です(`config.yaml` の `trading.mode: paper` で有効化)。")
         lines.append("")
         return lines
-    ret_pct = (pf["total"] / pf["initial"] - 1) * 100
     win_rate = (pf["wins"] / pf["closed_count"] * 100) if pf["closed_count"] else None
     lines.append(
         f"**総資産: {pf['total']:,.0f}円**(現金 {pf['cash']:,.0f}円 + "
-        f"評価額 {pf['pos_value']:,.0f}円)/ 初期資金比 **{ret_pct:+.2f}%** / "
+        f"評価額 {pf['pos_value']:,.0f}円)/ 運用資金 {pf['capital']:,.0f}円 / "
         f"累計実現損益 {pf['realized']:+,.0f}円"
         + (f" / 勝率 {win_rate:.0f}%({pf['wins']}/{pf['closed_count']})" if win_rate is not None else "")
     )
     lines.append("")
+    m = pf.get("month")
+    if m:
+        goal = (f"{m['profit_min']:,.0f}円" if m["profit_min"] == m["profit_max"]
+                else f"{m['profit_min']:,.0f}〜{m['profit_max']:,.0f}円")
+        lines.append(f"### 月次目標の進捗({m['month']})")
+        lines.append("")
+        if not m["is_current"]:
+            lines.append(f"※ 今月の目標設定がないため {m['month']} の目標を先行適用しています。")
+        lines.append(f"- 運用資金: {m['capital']:,.0f}円 / 目標利益: {goal}")
+        lines.append(
+            f"- 今月の損益: 実現 {m['realized']:+,.0f}円 + 含み {m['unrealized']:+,.0f}円 "
+            f"= **{m['total']:+,.0f}円**(目標下限の達成率 {m['progress_pct']:.0f}%)"
+        )
+        if m["remaining_to_min"] > 0:
+            lines.append(
+                f"- 残り約{m['biz_days_left']}営業日で目標下限まであと "
+                f"{m['remaining_to_min']:,.0f}円(1日あたり約{m['daily_pace']:,.0f}円ペース)"
+            )
+        else:
+            lines.append("- 🎉 目標下限を達成済み。利益の確保(利確ライン引き上げ)を優先。")
+        lines.append("")
     if pf["events"]:
         lines.append("**今回の約定:**")
         for ev in pf["events"]:
@@ -233,7 +254,10 @@ def _portfolio_section(pf: dict) -> list[str]:
                 f"@{c['exit_price']:,.1f}円(損益 {c['pnl']:+,.0f}円)"
             )
         lines.append("")
-    lines.append("*約定は分析時点の終値ベースのシミュレーションです。実際の証券口座への発注は行われません。*")
+    note = "*約定は分析時点の終値ベースのシミュレーションです。実際の証券口座への発注は行われません。"
+    if pf.get("fractional"):
+        note += "株数は単元未満株(楽天かぶミニ/SBI S株)での購入を前提としています。"
+    lines.append(note + "*")
     lines.append("")
     return lines
 
@@ -264,6 +288,64 @@ def build_report(session: str, market: dict, sector_info: dict, candidates: list
         "",
     ]
     return "\n".join(lines)
+
+
+def build_summary(session: str, market: dict, sector_info: dict, review: dict,
+                  order_plans: list[dict], portfolio: dict) -> str:
+    """通知用の短いサマリーを生成する。"""
+    now = datetime.now(JST)
+    lines = [f"## 📈 日本株分析 {now.strftime('%m/%d')} {SESSION_LABELS[session]}", ""]
+    lines.append(f"**市況: {market['stance']}** — {market['advice']}")
+    top = [e["group"] for e in sector_info["entries"] if e.get("bonus", 0) > 0][:4]
+    if top:
+        lines.append(f"**注目セクター**: {'、'.join(top)}")
+    lines.append("")
+
+    buys = review["buy_signals"]
+    if buys:
+        plan_by_code = {o["code"]: o for o in order_plans}
+        lines.append(f"**🔔 買いシグナル {len(buys)}件:**")
+        for b in buys:
+            p = b["plan"]
+            o = plan_by_code.get(b["code"])
+            qty = f" / {o['shares']}株(約{o['amount']:,.0f}円)" if o else ""
+            lines.append(
+                f"- **{b['code']} {b['name']}**({b['signal']['type']}): "
+                f"買 {p['entry']:,.1f}円 / 利確 {p['profit_target']:,.1f}円 "
+                f"({p['profit_target_pct']:+.1f}%) / 損切 {p['stop_loss']:,.1f}円 "
+                f"({p['stop_loss_pct']:+.1f}%){qty}"
+            )
+    else:
+        lines.append("買いシグナル: なし(押し目・ブレイク待ち)")
+    lines.append("")
+
+    if portfolio.get("enabled"):
+        if portfolio["events"]:
+            lines.append("**約定(シミュレーション):**")
+            for ev in portfolio["events"]:
+                lines.append(f"- {ev}")
+        m = portfolio.get("month")
+        if m:
+            goal = (f"{m['profit_min']:,.0f}円" if m["profit_min"] == m["profit_max"]
+                    else f"{m['profit_min']:,.0f}〜{m['profit_max']:,.0f}円")
+            lines.append(
+                f"**月次進捗({m['month']})**: {m['total']:+,.0f}円 / 目標 {goal} "
+                f"(達成率 {m['progress_pct']:.0f}%・残り約{m['biz_days_left']}営業日)"
+            )
+        lines.append(f"**総資産**: {portfolio['total']:,.0f}円"
+                     f"(保有 {len(portfolio['positions'])}銘柄)")
+    if review["removed"]:
+        lines.append("**ウォッチリスト除外**: "
+                     + "、".join(f"{r['code']} {r['name']}" for r in review["removed"]))
+    lines.append("")
+    return "\n".join(lines)
+
+
+def save_summary(content: str) -> str:
+    REPORTS_DIR.mkdir(parents=True, exist_ok=True)
+    path = REPORTS_DIR / "latest_summary.md"
+    path.write_text(content, encoding="utf-8")
+    return str(path)
 
 
 def save_report(session: str, content: str) -> str:

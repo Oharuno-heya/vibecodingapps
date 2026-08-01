@@ -15,6 +15,7 @@ from datetime import date
 
 from .config import DB_PATH
 from .data import fetch_history
+from .targets import biz_days_left_in_month, size_position, trading_params
 
 
 def _conn() -> sqlite3.Connection:
@@ -42,10 +43,15 @@ def _conn() -> sqlite3.Connection:
         CREATE TABLE IF NOT EXISTS account (
             id INTEGER PRIMARY KEY CHECK (id = 1),
             cash REAL NOT NULL,
-            initial_capital REAL NOT NULL
+            initial_capital REAL NOT NULL,
+            base_capital REAL
         );
         """
     )
+    try:  # 旧スキーマからの移行
+        conn.execute("ALTER TABLE account ADD COLUMN base_capital REAL")
+    except sqlite3.OperationalError:
+        pass
     return conn
 
 
@@ -65,14 +71,25 @@ def execute_trades(review: dict, results_by_code: dict, cfg: dict, session: str)
     if t.get("mode") != "paper":
         return {"enabled": False}
 
+    params = trading_params(cfg)
+    capital = params["capital"]
     today = date.today().isoformat()
     events = []
     with _conn() as conn:
         conn.execute(
-            "INSERT OR IGNORE INTO account (id, cash, initial_capital) VALUES (1, ?, ?)",
-            (t["initial_capital"], t["initial_capital"]),
+            "INSERT OR IGNORE INTO account (id, cash, initial_capital, base_capital) "
+            "VALUES (1, ?, ?, ?)",
+            (capital, capital, capital),
         )
-        cash = float(conn.execute("SELECT cash FROM account WHERE id=1").fetchone()["cash"])
+        acct = conn.execute("SELECT * FROM account WHERE id=1").fetchone()
+        cash = float(acct["cash"])
+        base = float(acct["base_capital"] if acct["base_capital"] is not None
+                     else acct["initial_capital"])
+        # 月次目標の運用資金が変わったら入出金として現金を調整
+        if abs(capital - base) >= 1:
+            cash += capital - base
+            conn.execute("UPDATE account SET base_capital=? WHERE id=1", (capital,))
+            events.append(f"資金調整 {capital - base:+,.0f}円(今月の運用資金 {capital:,.0f}円)")
 
         # --- 決済判定 ---
         open_rows = conn.execute("SELECT * FROM positions WHERE status='open'").fetchall()
@@ -112,7 +129,7 @@ def execute_trades(review: dict, results_by_code: dict, cfg: dict, session: str)
         n_open = len(held)
         signals = sorted(review["buy_signals"], key=lambda x: x["score"] or 0, reverse=True)
         for b in signals:
-            if n_open >= t["max_positions"]:
+            if n_open >= params["max_positions"]:
                 break
             if b["code"] in held:
                 continue
@@ -120,8 +137,7 @@ def execute_trades(review: dict, results_by_code: dict, cfg: dict, session: str)
             if not plan.get("actionable"):
                 continue
             price = float(b.get("price") or plan["entry"])
-            lot = t["lot_size"]
-            shares = int(min(t["budget_per_position"], cash) // (price * lot)) * lot
+            shares = size_position(price, min(params["budget_per_position"], cash), params)
             if shares <= 0:
                 continue
             conn.execute(
@@ -165,17 +181,45 @@ def execute_trades(review: dict, results_by_code: dict, cfg: dict, session: str)
             "SELECT COALESCE(SUM(pnl),0) s, COUNT(*) n, "
             "SUM(CASE WHEN pnl > 0 THEN 1 ELSE 0 END) w "
             "FROM positions WHERE status='closed'").fetchone()
+        month_realized = float(conn.execute(
+            "SELECT COALESCE(SUM(pnl),0) FROM positions "
+            "WHERE status='closed' AND exit_date LIKE ?",
+            (today[:7] + "%",)).fetchone()[0])
+
+    unrealized = sum(p["unrealized"] for p in positions)
+    month = None
+    tgt = params["target"]
+    if tgt:
+        month_total = month_realized + unrealized
+        remaining = max(float(tgt["profit_min"]) - month_total, 0)
+        days_left = biz_days_left_in_month()
+        month = {
+            "month": tgt["month"],
+            "is_current": params["target_is_current_month"],
+            "capital": capital,
+            "profit_min": float(tgt["profit_min"]),
+            "profit_max": float(tgt["profit_max"]),
+            "realized": month_realized,
+            "unrealized": unrealized,
+            "total": month_total,
+            "progress_pct": month_total / float(tgt["profit_min"]) * 100,
+            "biz_days_left": days_left,
+            "remaining_to_min": remaining,
+            "daily_pace": remaining / days_left if days_left > 0 else remaining,
+        }
 
     return {
         "enabled": True,
         "cash": cash,
         "pos_value": pos_value,
         "total": cash + pos_value,
-        "initial": float(t["initial_capital"]),
+        "capital": capital,
+        "fractional": params["fractional"],
         "realized": float(agg["s"]),
         "closed_count": int(agg["n"]),
         "wins": int(agg["w"] or 0),
         "positions": positions,
         "closed_recent": closed,
         "events": events,
+        "month": month,
     }

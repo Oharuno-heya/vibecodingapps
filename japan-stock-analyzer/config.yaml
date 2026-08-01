@@ -37,12 +37,24 @@ watchlist:
   low_score_streak: 3        # 低スコアが何回連続したら削除するか
   max_watch_days: 60         # シグナルが出ないまま観察を続ける最大日数
 
+# 月次目標(いつでも編集可)。運用資金とポジションサイズはここから自動算出される
+targets:
+  max_positions: 2             # 月次資金を分割する最大同時ポジション数
+  monthly:
+    - {month: "2026-08", capital: 200000, profit_min: 30000, profit_max: 40000}
+    - {month: "2026-09", capital: 200000, profit_min: 60000, profit_max: 80000}
+    - {month: "2026-10", capital: 250000, profit_min: 100000, profit_max: 100000}
+    - {month: "2026-11", capital: 300000, profit_min: 130000, profit_max: 130000}
+    - {month: "2026-12", capital: 350000, profit_min: 150000, profit_max: 150000}
+
 trading:
   # 楽天証券/SBI証券には個人向け発注APIがないため、実口座への発注は行わない。
   # paper = 仮想売買シミュレーション(買いシグナルに従い自動執行・損益管理)/ off = 無効
   mode: paper
-  initial_capital: 1000000     # ペーパートレードの初期資金(円)
-  max_positions: 5             # 同時保有の最大銘柄数
-  max_hold_days: 45            # 保有期間の上限(暦日)スイング想定
-  budget_per_position: 300000  # 1銘柄あたりの投資予算(円)
-  lot_size: 100                # 単元株数
+  allow_fractional: true       # 単元未満株(楽天かぶミニ/SBI S株)前提の1株単位売買
+  initial_capital: 200000      # 月次目標が設定されていない場合の運用資金(円)
+  max_hold_days: 60            # 保有期間の上限(暦日)1〜2ヶ月のスイング対応
+  lot_size: 100                # 単元株数(allow_fractional: false の場合に使用)
+
+notify:
+  sessions: [morning, noon]    # 通知するセッション(夕方はスクリーニングのみで通知なし)

@@ -14,8 +14,9 @@ from zoneinfo import ZoneInfo
 from analyzer.config import load_config
 from analyzer.market import analyze_market
 from analyzer.portfolio import execute_trades
-from analyzer.report import build_report, save_report
+from analyzer.report import build_report, build_summary, save_report, save_summary
 from analyzer.screener import pick_candidates, run_screening
+from analyzer.targets import size_position, trading_params
 from analyzer.watchlist import add_candidates, get_watchlist, review_watchlist
 
 JST = ZoneInfo("Asia/Tokyo")
@@ -31,22 +32,24 @@ def detect_session() -> str:
 
 
 def build_order_plans(buy_signals: list[dict], cfg: dict) -> list[dict]:
-    """買いシグナル銘柄から手動発注用の注文案を作る。"""
-    budget = cfg["trading"]["budget_per_position"]
-    lot = cfg["trading"]["lot_size"]
+    """買いシグナル銘柄から手動発注用の注文案を作る(月次目標の資金配分に基づく)。"""
+    params = trading_params(cfg)
     plans = []
     for b in buy_signals:
         plan = b["plan"]
         if not plan.get("actionable"):
             continue
         price = plan["entry"]
-        shares = int(budget // (price * lot)) * lot
+        shares = size_position(price, params["budget_per_position"], params)
         if shares == 0:
-            continue  # 予算内で単元購入不可
+            continue  # 予算内で購入不可
+        order_type = "寄付近辺の成行または指値"
+        if params["fractional"] and shares < params["lot_size"]:
+            order_type += "(かぶミニ/S株)"
         plans.append({
             "code": b["code"],
             "name": b["name"],
-            "order_type": "寄付成行(または前日終値近辺の指値)",
+            "order_type": order_type,
             "shares": shares,
             "amount": shares * price,
             "profit_target": plan["profit_target"],
@@ -97,6 +100,7 @@ def main() -> int:
     content = build_report(session, market, sector_info, candidates, added, review,
                            order_plans, portfolio)
     path = save_report(session, content)
+    save_summary(build_summary(session, market, sector_info, review, order_plans, portfolio))
     print(f"      レポート: {path}")
     print(f"      ウォッチリスト: {len(get_watchlist())}銘柄 / "
           f"買いシグナル: {len(review['buy_signals'])}件")
